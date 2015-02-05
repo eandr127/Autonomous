@@ -2,7 +2,6 @@ package ca.team2994.frc.autonomous;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -42,13 +41,18 @@ public class AutoMode {
 	/**
 	 * A list of all waypoints loaded
 	 */
-	private List<Waypoint> waypoints;
+	private Play waypoints;
 
 	/**
 	 * The start time of this object
 	 */
 	public final long startTime = System.currentTimeMillis();
 
+	
+	private static DriveManager staticDrive;
+	
+	private boolean usePID;
+	
 	/**
 	 * Initialize a AutoMode object and read from the autonomous waypoints file
 	 * specified by filename. After this call if an exception is not thrown the
@@ -63,15 +67,24 @@ public class AutoMode {
 	 * @throws IOException
 	 *             If the waypoints file doesn't exist or cannot be read.
 	 */
-	public AutoMode(String name, String filename, DriveManager drive)
+	public AutoMode(String name, String filename, DriveManager drive, boolean usePID)
 			throws IOException {
 		this.name = name;
 		this.filename = filename;
 		this.drive = drive;
-		this.waypoints = new ArrayList<>();
+		this.waypoints = new Play(filename);
+		this.usePID = usePID;
+		
 		this.loadWaypoints();
+		
+		AutoMode.setRobotDrive(drive);
 	}
 
+	
+	private static void setRobotDrive(DriveManager d) {
+		AutoMode.staticDrive = d;
+	}
+	
 	/**
 	 * Load the waypoints specified in the waypoints file into the ArrayList.
 	 * 
@@ -101,7 +114,7 @@ public class AutoMode {
 					try {
 						int angle = (int) Double.parseDouble(s[2]);
 						waypoints.add(new TurnWaypoint(angle, Integer
-								.parseInt(s[0]), drive));
+								.parseInt(s[0]), drive, usePID));
 					} catch (NumberFormatException nef) {
 						nef.printStackTrace();
 						Utils.logException(Utils.ROBOT_LOGGER, nef);
@@ -112,7 +125,7 @@ public class AutoMode {
 						// TODO: Add a class for a normal waypoint (drive
 						// straight)
 						waypoints.add(new DriveWaypoint(distance, Integer
-								.parseInt(s[0]), drive));
+								.parseInt(s[0]), drive, usePID));
 					} catch (NumberFormatException nef) {
 						nef.printStackTrace();
 						Utils.logException(Utils.ROBOT_LOGGER, nef);
@@ -128,6 +141,65 @@ public class AutoMode {
 		Collections.sort(waypoints, WAYPOINT_COMPARER);
 
 		runScheduler();
+	}
+	
+	/**
+	 * Load the waypoints specified in the waypoints file into the ArrayList.
+	 * 
+	 * @throws IOException
+	 *             If the file cannot be read or doesn't exist.
+	 */
+	public static Play loadWaypoints(File f) throws IOException {
+		// TODO: Read from the autonomous waypoints file (filename)
+		// Magic Guava splitting/reading voodoo
+		
+		Play waypoints = new Play(f.getPath());
+		
+		List<String> guavaResult = Files.readLines(f,
+				Charsets.UTF_8);
+		Iterable<String> guavaResultFiltered = Iterables.filter(guavaResult,
+				Utils.skipComments);
+		guavaResultFiltered.forEach(new Consumer<String>() {
+			@Override
+			public void accept(String line) {
+				String[] s = Iterables.toArray(Utils.SPLITTER.split(line),
+						String.class);
+				/*
+				 * s should now contain: 1) The time since the start of
+				 * autonomous 2) The type of action (turn or drive) 3) The
+				 * parameters for the action
+				 */
+				String type = s[1];
+
+				if (type.equalsIgnoreCase("turn")) {
+					try {
+						int angle = (int) Double.parseDouble(s[2]);
+						waypoints.add(new TurnWaypoint(angle, Integer
+								.parseInt(s[0]), AutoMode.staticDrive, AutoMode.staticDrive.usePID()));
+					} catch (NumberFormatException nef) {
+						nef.printStackTrace();
+						Utils.logException(Utils.ROBOT_LOGGER, nef);
+					}
+				} else if (type.equalsIgnoreCase("drive")) {
+					try {
+						Double distance = Double.parseDouble(s[2]);
+						// TODO: Add a class for a normal waypoint (drive
+						// straight)
+						waypoints.add(new DriveWaypoint(distance, Integer
+								.parseInt(s[0]), AutoMode.staticDrive, staticDrive.usePID()));
+					} catch (NumberFormatException nef) {
+						nef.printStackTrace();
+						Utils.logException(Utils.ROBOT_LOGGER, nef);
+					}
+
+				}
+
+			}
+
+		});
+		// Contains the split up ones for this line
+		Collections.sort(waypoints, WAYPOINT_COMPARER);
+		return waypoints;
 	}
 
 	/**
@@ -158,6 +230,9 @@ public class AutoMode {
 			}
 			w.run();
 		}
-
+	}
+	
+	public void setPlay(Play play) {
+		waypoints = play;
 	}
 }

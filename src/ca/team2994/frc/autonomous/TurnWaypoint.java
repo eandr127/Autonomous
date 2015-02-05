@@ -24,16 +24,19 @@ public class TurnWaypoint implements Waypoint {
 	 */
 	private DriveManager manager;
 	
+	private boolean usePID;
+	
 	/**
 	 * 
 	 * @param angle
 	 * @param time
 	 * @param manager
 	 */
-	public TurnWaypoint(int angle, long time, DriveManager manager) {
+	public TurnWaypoint(int angle, long time, DriveManager manager, boolean usePID) {
 		this.angle = angle;
 		this.time = time;
 		this.manager = manager;
+		this.usePID = usePID;
 	}
 	
 	@Override
@@ -45,7 +48,7 @@ public class TurnWaypoint implements Waypoint {
 	public void run() {
 
 		
-		manager.driveTurn(angle);
+		manager.driveTurn(angle, usePID);
 		
 	}
 }

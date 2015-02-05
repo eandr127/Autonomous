@@ -1,12 +1,15 @@
 package ca.team2994.frc.autonomous;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import ca.team2994.frc.utils.ButtonEntry;
 import ca.team2994.frc.utils.ConfigFile;
 import ca.team2994.frc.utils.EJoystick;
+import ca.team2994.frc.utils.PlayList;
 import ca.team2994.frc.utils.SimGyro;
 import ca.team2994.frc.utils.SimLib;
 import ca.team2994.frc.utils.SimPID;
@@ -47,26 +50,6 @@ public class DriveManagerImpl implements DriveManager {
 	/**
 	 * 
 	 */
-	double gyroP;
-	
-	/**
-	 * 
-	 */
-	double gyroI;
-	
-	/**
-	 * 
-	 */
-	double gyroD;
-	
-	/**
-	 * 
-	 */
-	double gyroE;
-
-	/**
-	 * 
-	 */
 	private SimGyro gyro;
 	
 	/**
@@ -94,9 +77,12 @@ public class DriveManagerImpl implements DriveManager {
 	 */
 	private CalibrationManager calibration;
 	
-	@SuppressWarnings("unused")
 	private ConfigFile conf;
+	
+	private boolean saveWaypoints = true;
 
+	private boolean usePID;
+	
 	/**
 	 * Initializes a DriveManagerImpl. This class is an implementation of the
 	 * interface DriveManager and can be used to drive the robot via turning or
@@ -139,6 +125,8 @@ public class DriveManagerImpl implements DriveManager {
 
 		
 		this.conf = new ConfigFile(ConfigFile.DEFAULT_CONFIGURATION_FILE);
+		saveWaypoints = this.conf.getPropertyAsBoolean("doRobotLogging");
+		
 		// Initialize the gyro (takes 1.0 seconds cause of a wait in the code,
 		// can we fix this?)
 		// gyro.setSensitivity(Double.POSITIVE_INFINITY);
@@ -150,7 +138,9 @@ public class DriveManagerImpl implements DriveManager {
 		// TODO: Read these in from the Constants file or the SmartDashboard
 		// Rationale: The D stops it from thrasing, P is taken from Simbotics
 		// Rationale: P is taken from Simbotics.
-		this.encoderPID = new SimPID(2.16, 0.0, 0.0, 0.1);
+		double[] encoderPIDVals = conf.getPropertyAsDoubleArray("gyroPID");
+		
+		this.encoderPID = new SimPID(encoderPIDVals[0], encoderPIDVals[1], encoderPIDVals[2], encoderPIDVals[3]);
 
 		// Initialize the Calibration instance
 		this.calibration = new CalibrationManager(stick, drive, base);
@@ -191,27 +181,9 @@ public class DriveManagerImpl implements DriveManager {
 	 * @see ca.team2994.frc.autonomous.DriveManager#readPIDValues()
 	 */
 	public void readPIDValues() {
-		try {
-
-			List<String> guavaResult = Files.readLines(new File(
-					"/home/lvuser/gyroPID.txt"), Charsets.UTF_8);
-			Iterable<String> guavaResultFiltered = Iterables.filter(
-					guavaResult, Utils.skipComments);
-
-			String[] s = Iterables
-					.toArray(Utils.SPLITTER.split(guavaResultFiltered
-							.iterator().next()), String.class);
-
-			gyroP = Double.parseDouble(s[0]);
-			gyroI = Double.parseDouble(s[1]);
-			gyroD = Double.parseDouble(s[2]);
-			gyroE = Double.parseDouble(s[3]);
-
-			this.gyroPID = new SimPID(gyroP, gyroI, gyroD, gyroE);
-
-		} catch (IOException e) {
-			Utils.logException(Utils.ROBOT_LOGGER, e);
-		}
+		double[] gyroPIDVals = conf.getPropertyAsDoubleArray("gyroPID");
+		
+		this.gyroPID = new SimPID(gyroPIDVals[0], gyroPIDVals[1], gyroPIDVals[2], gyroPIDVals[3]);
 	}
 
 	/*
@@ -220,7 +192,12 @@ public class DriveManagerImpl implements DriveManager {
 	 * @see ca.team2994.frc.autonomous.DriveManager#driveStraight(int)
 	 */
 	@Override
-	public void driveStraight(double units) {
+	public void driveStraight(double units, boolean usePID) {
+		if(!usePID) {
+			deadReckonDrive(units);
+			return;
+		}
+		
 		// Reset the encoders (encoder.get(Distance|)() == 0)
 		leftEncoder.reset();
 		rightEncoder.reset();
@@ -243,7 +220,7 @@ public class DriveManagerImpl implements DriveManager {
 					.calcPID((leftEncoder.getDistance() + rightEncoder
 							.getDistance()) / 2.0);
 			// TODO: Read this from the constants file as "encoderPIDMax"
-			double limitVal = SimLib.limitValue(driveVal, 0.25);
+			double limitVal = SimLib.limitValue(driveVal, conf.getPropertyAsDouble("driveSpeed", 0.25));
 
 			drive.setLeftRightMotorOutputs(limitVal + 0.0038, limitVal);
 		}
@@ -260,7 +237,12 @@ public class DriveManagerImpl implements DriveManager {
 	 * @see ca.team2994.frc.autonomous.DriveManager#driveTurn(int)
 	 */
 	@Override
-	public void driveTurn(int degrees) {
+	public void driveTurn(int degrees, boolean usePID) {
+		if(!usePID) {
+			deadReckonTurn(degrees);
+			return;
+		}
+		
 		gyroPID.setDesiredValue(degrees);
 		gyro.reset(0);
 		// Reset the gyro PID to a reasonable state.
@@ -275,7 +257,7 @@ public class DriveManagerImpl implements DriveManager {
 			System.out.println("gyro.getAngle() = " + gyro.getAngle());
 			double driveVal = gyroPID.calcPID(-gyro.getAngle());
 			// TODO: Read this from the constants file as "gyroPIDMax"
-			double limitVal = SimLib.limitValue(driveVal, 0.25);
+			double limitVal = SimLib.limitValue(driveVal, conf.getPropertyAsDouble("turnSpeed", 0.25));
 			System.out.println("limitVal = " + limitVal);
 			drive.setLeftRightMotorOutputs(limitVal, -limitVal);
 		}
@@ -313,15 +295,21 @@ public class DriveManagerImpl implements DriveManager {
 	 * @see ca.team2994.frc.autonomous.DriveManager#runAutonomous
 	 */
 	public void runAutonomous() {
-		try {
-			@SuppressWarnings("unused")
-			AutoMode auto = new AutoMode("Test Autonomous",
-					Utils.AUTONOMOUS_OUTPUT_FILE_LOC, this);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		File f = new File(conf.getProperty("playDir"));
+		File[] files = f.listFiles(new FilenameFilter() { 
+		 public boolean accept(File dir, String filename)
+		      { return filename.endsWith(".auto"); }
+			} );
+		
+		List<File> listOfFiles = new ArrayList<File>();
 
+		for(File file : files) {
+			listOfFiles.add(file);
+		}
+		
+		PlayList plays = new PlayList(listOfFiles, this, usePID);
+		
+		plays.play(conf.getProperty("playToUse"));
 	}
 
 	/*
@@ -330,7 +318,7 @@ public class DriveManagerImpl implements DriveManager {
 	 * @see ca.team2994.frc.autonomous.DriveManager#runTeleOpLogging
 	 */
 	public void runTeleOPLogging() {
-		File log = Utils.AUTONOMOUS_OUTPUT_FILE;
+		File log = new File(conf.getProperty("outputPlayFile"));
 		if (log.exists()) {
 			log.delete();
 		}
@@ -339,7 +327,7 @@ public class DriveManagerImpl implements DriveManager {
 		boolean isFirst = true;
 		while (robot.isOperatorControl()) {
 			long temp = 0;
-			if ((temp = doLogging(time, isFirst)) != 0) {
+			if ((temp = doLogging(time, isFirst, log)) != 0) {
 				time = temp;
 				isFirst = false;
 			}
@@ -347,7 +335,7 @@ public class DriveManagerImpl implements DriveManager {
 		drive.drive(0, 0);
 	}
 
-	private long doLogging(long startTime, boolean isFirst) {
+	private long doLogging(long startTime, boolean isFirst, File f) {
 		resetMeasurements();
 
 		stick.enableButton(1);
@@ -384,13 +372,13 @@ public class DriveManagerImpl implements DriveManager {
 					+ (leftEncoder.getDistance() + rightEncoder.getDistance())
 					/ 2;
 
-			Utils.addLine(new String[] { time, actionType, encoderVal });
+			Utils.addLine(new String[] { time, actionType, encoderVal }, f);
 		} else {
 			String time = "" + (System.currentTimeMillis() - startTime);
 			String actionType = "turn";
 			String gyroAngle = "" + gyro.getAngle();
 
-			Utils.addLine(new String[] { time, actionType, gyroAngle });
+			Utils.addLine(new String[] { time, actionType, gyroAngle }, f);
 
 		}
 
@@ -407,5 +395,37 @@ public class DriveManagerImpl implements DriveManager {
 		leftEncoder.reset();
 		rightEncoder.reset();
 		gyro.reset(0);
+	}
+
+	public boolean doRobotLogging() {
+		return saveWaypoints;
+	}
+	
+	public boolean usePID() {
+		return usePID();
+	}
+	
+	private void deadReckonTurn(int degrees) {
+		gyro.reset();
+		
+    	while((gyro.getAngle() < degrees) && robot.isEnabled()) {
+    		drive.setLeftRightMotorOutputs(conf.getPropertyAsDouble("turnSpeed", 0.25), -conf.getPropertyAsDouble("turnSpeed", 0.25));
+    	}
+    	
+    	drive.drive(0, 0);
+	}
+	
+	private void deadReckonDrive(double distance) {
+		leftEncoder.reset();
+		rightEncoder.reset();
+		
+		double distanceTravelled = 0.0;
+		
+    	while((distanceTravelled < distance) && robot.isEnabled()) {
+    		distanceTravelled = (leftEncoder.getDistance() + rightEncoder.getDistance()) / 2;
+    		drive.drive(conf.getPropertyAsDouble("driveSpeed", 0.25), 0.0);
+    	}
+    	
+    	drive.drive(0, 0);
 	}
 }

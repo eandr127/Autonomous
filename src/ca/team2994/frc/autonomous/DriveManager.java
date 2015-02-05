@@ -14,7 +14,7 @@ public interface DriveManager {
 	 * calibrated to.
 	 * @param units Number of units to drive forward. Determined by calibration.
 	 */
-	public abstract void driveStraight(double units);
+	public abstract void driveStraight(double units, boolean usePID);
 
 	/**
 	 * Turns degrees degrees to the left when degrees is negative and to the right
@@ -23,7 +23,7 @@ public interface DriveManager {
 	 * 		 respectively.
 	 * @param degrees The number of degrees to turn
 	 */
-	public abstract void driveTurn(int degrees);
+	public abstract void driveTurn(int degrees, boolean usePID);
 	
 	/**
 	 * Drive using arcade drive. This means that the joystick will be used so that 
@@ -58,4 +58,8 @@ public interface DriveManager {
 	 * Reset gyro and encoder measurements
 	 */
 	public void resetMeasurements();
+	
+	public boolean doRobotLogging();
+	
+	public boolean usePID();
 }

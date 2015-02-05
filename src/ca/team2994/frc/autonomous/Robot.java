@@ -30,12 +30,6 @@ public class Robot extends SampleRobot {
 	int autoLoopCounter;
 	
 	/**
-	 * Whether to use regular tele-op or to log waypoints
-	 */
-	private static final boolean SAVE_WAYPOINTS = true;
-	
-	
-	/**
 	 * 
 	 */
 	private EJoystick stick;
@@ -89,7 +83,7 @@ public class Robot extends SampleRobot {
      * Runs the motors with arcade steering or log waypoints (TODO).
      */
     public void operatorControl() {
-    	if(!SAVE_WAYPOINTS) {
+    	if(!driveManager.doRobotLogging()) {
     		Utils.ROBOT_LOGGER.log(INFO, "Tele-Op");
     		while (isOperatorControl() && isEnabled()) {
     			driveManager.arcadeDrive();

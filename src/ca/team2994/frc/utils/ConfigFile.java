@@ -231,4 +231,54 @@ public class ConfigFile {
 		
 		return dArray;
 	}
+	
+	/**
+	 * Gets a property as a Double value. Anything not a double returns null.
+	 * 
+	 * @param key
+	 *            The key to get and convert to a Double.
+	 * @return The value of the key, converted to a Double Object as specified
+	 *         above, or null if the property does not exist or if a error
+	 *         occurs while converting the property.
+	 */
+	public Double getPropertyAsDouble(String key) {
+		try {
+			String s = this.getProperty(key);
+
+			if (s == null) {
+				return null;
+			}
+
+			return Double.parseDouble(s);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * Gets a property as a Double value. Anything that is not a double is
+	 * null.
+	 * 
+	 * @param key
+	 *            The key to get and convert to a Double.
+	 * @param defaultValue
+	 *            The value to return if the value does not exist.
+	 * @return The value of the key, converted to a Double Object as specified
+	 *         above, null if a error occurred while converting the double, or
+	 *         defaultValue if the property did not exist.
+	 */
+	public Double getPropertyAsDouble(String key, double defaultValue) {
+		try {
+			String s = this.getProperty(key);
+
+			if (s == null) {
+				return defaultValue;
+			}
+
+			return Double.parseDouble(s);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
 }

@@ -24,16 +24,19 @@ public class DriveWaypoint implements Waypoint {
 	 */
 	private DriveManager manager;
 	
+	private boolean usePID;
+	
 	/**
 	 * 
 	 * @param distance
 	 * @param time
 	 * @param manager
 	 */
-	public DriveWaypoint(double distance, long time, DriveManager manager) {
+	public DriveWaypoint(double distance, long time, DriveManager manager, boolean usePID) {
 		this.distance = distance;
 		this.time = time;
 		this.manager = manager;
+		this.usePID = usePID;
 	}
 
 	@Override
@@ -43,6 +46,6 @@ public class DriveWaypoint implements Waypoint {
 
 	@Override
 	public void run() {
-		manager.driveStraight(distance);
+		manager.driveStraight(distance, usePID);
 	}
 }

@@ -46,11 +46,6 @@ public class Utils {
 	public static final String CALIBRATION_OUTPUT_FILE_LOC = "/home/lvuser/calibration.txt";
 	
 	/**
-	 * Location of Autonomous output file
-	 */
-	public static final String AUTONOMOUS_OUTPUT_FILE_LOC = "/home/lvuser/auto.log";
-	
-	/**
 	 * The print stream to write to a file using {@link #writeLineToFile(String, File) writeLineToFile(java.lang.String line java.io.File file)}
 	 */
 	public static PrintStream stream = null;
@@ -69,8 +64,6 @@ public class Utils {
 	 * The path for the log
 	 */
 	public static final String ROBOT_LOG_FILENAME = "/home/lvuser/robot.log";
-	
-	public static final File AUTONOMOUS_OUTPUT_FILE = new File(AUTONOMOUS_OUTPUT_FILE_LOC);
 	
 	/**
 	 * Configures the logger
@@ -141,15 +134,6 @@ public class Utils {
 	}
 	
 	/**
-	 * Passes line on to {@link #writeLineToFile(String, File) writeLineToFile(java.lang.String line, java.io.File file)} using AUTONOMOUS_OUTPUT_FILE_LOC for the location parameter
-	 * @param line The String to write to the file
-	 * @return Whether the operation was successful or not
-	 */
-	public static boolean writeLineToFile(String line) {
-		return writeLineToFile(line, AUTONOMOUS_OUTPUT_FILE);
-	}
-	
-	/**
 	 * Drive until a distance is reached
 	 * @param speed The speed to drive at
 	 * @param turnMagnitude How much to turn
@@ -187,19 +171,19 @@ public class Utils {
 	 * 
 	 * @param values
 	 */
-	public static void addLine(String[] values) {
+	public static void addLine(String[] values, File f) {
 		boolean isFirst = true;
 		for(String d : values) {
 			
 			if(!isFirst) {
-				writeStringToFile(", ", new File(AUTONOMOUS_OUTPUT_FILE_LOC));
+				writeStringToFile(", ", f);
 			}
 			else {
 				isFirst = false;
 			}
 			
-			writeStringToFile("" + d, new File(AUTONOMOUS_OUTPUT_FILE_LOC));
+			writeStringToFile("" + d, f);
 		}
-		writeStringToFile("\n", new File(AUTONOMOUS_OUTPUT_FILE_LOC));
+		writeStringToFile("\n", f);
 	}
 }
