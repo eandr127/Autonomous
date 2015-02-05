@@ -31,58 +31,68 @@ import edu.wpi.first.wpilibj.RobotDrive;
  * 
  */
 public class DriveManagerImpl implements DriveManager {
-	
+
 	/**
 	 * Robot - used to bail out if disable
 	 */
 	private RobotBase robot;
 
 	/**
-	 * SimPID to oscillate using encoders around target 
+	 * SimPID to oscillate using encoders around target
 	 */
 	private SimPID encoderPID;
-	
+
 	/**
-	 * SimPID to oscillate using gyro around target 
+	 * SimPID to oscillate using gyro around target
 	 */
 	private SimPID gyroPID;
 
 	/**
-	 * 
+	 * A gryo to measure angles with
 	 */
 	private SimGyro gyro;
-	
+
 	/**
-	 * 
+	 * The right encoder to measure wheel turn distance
 	 */
 	private Encoder rightEncoder;
-	
+
 	/**
-	 * 
+	 * The left encoder to measure wheel turn distance
 	 */
 	private Encoder leftEncoder;
 
 	/**
-	 * 
+	 * The joystick to move the robot with
 	 */
 	private EJoystick stick;
 
 	/**
-	 * 
+	 * The robotDrive to move the robot with
 	 */
 	private RobotDrive drive;
 
 	/**
-	 * 
+	 * Manages the calibration of the encoders of the robot
 	 */
 	private CalibrationManager calibration;
-	
+
+	/**
+	 * The properties file to read values from
+	 */
 	private ConfigFile conf;
-	
+
+	/**
+	 * In tele-op, whether to log waypoints or use normal tele-op
+	 */
 	private boolean saveWaypoints = true;
 
+	/**
+	 * Whether in autonomous, to use PID or dead reckoning to move with specific
+	 * distances
+	 */
 	private boolean usePID;
-	
+
 	/**
 	 * Initializes a DriveManagerImpl. This class is an implementation of the
 	 * interface DriveManager and can be used to drive the robot via turning or
@@ -123,14 +133,8 @@ public class DriveManagerImpl implements DriveManager {
 		this.rightEncoder = rightEncoder;
 		this.stick = stick;
 
-		
 		this.conf = new ConfigFile(ConfigFile.DEFAULT_CONFIGURATION_FILE);
 		saveWaypoints = this.conf.getPropertyAsBoolean("doRobotLogging");
-		
-		// Initialize the gyro (takes 1.0 seconds cause of a wait in the code,
-		// can we fix this?)
-		// gyro.setSensitivity(Double.POSITIVE_INFINITY);
-		// gyro.initGyro();
 
 		// Read encoder values from a file.
 		readEncoderValues();
@@ -139,8 +143,9 @@ public class DriveManagerImpl implements DriveManager {
 		// Rationale: The D stops it from thrasing, P is taken from Simbotics
 		// Rationale: P is taken from Simbotics.
 		double[] encoderPIDVals = conf.getPropertyAsDoubleArray("gyroPID");
-		
-		this.encoderPID = new SimPID(encoderPIDVals[0], encoderPIDVals[1], encoderPIDVals[2], encoderPIDVals[3]);
+
+		this.encoderPID = new SimPID(encoderPIDVals[0], encoderPIDVals[1],
+				encoderPIDVals[2], encoderPIDVals[3]);
 
 		// Initialize the Calibration instance
 		this.calibration = new CalibrationManager(stick, drive, base);
@@ -182,8 +187,9 @@ public class DriveManagerImpl implements DriveManager {
 	 */
 	public void readPIDValues() {
 		double[] gyroPIDVals = conf.getPropertyAsDoubleArray("gyroPID");
-		
-		this.gyroPID = new SimPID(gyroPIDVals[0], gyroPIDVals[1], gyroPIDVals[2], gyroPIDVals[3]);
+
+		this.gyroPID = new SimPID(gyroPIDVals[0], gyroPIDVals[1],
+				gyroPIDVals[2], gyroPIDVals[3]);
 	}
 
 	/*
@@ -193,11 +199,11 @@ public class DriveManagerImpl implements DriveManager {
 	 */
 	@Override
 	public void driveStraight(double units, boolean usePID) {
-		if(!usePID) {
+		if (!usePID) {
 			deadReckonDrive(units);
 			return;
 		}
-		
+
 		// Reset the encoders (encoder.get(Distance|)() == 0)
 		leftEncoder.reset();
 		rightEncoder.reset();
@@ -220,7 +226,8 @@ public class DriveManagerImpl implements DriveManager {
 					.calcPID((leftEncoder.getDistance() + rightEncoder
 							.getDistance()) / 2.0);
 			// TODO: Read this from the constants file as "encoderPIDMax"
-			double limitVal = SimLib.limitValue(driveVal, conf.getPropertyAsDouble("driveSpeed", 0.25));
+			double limitVal = SimLib.limitValue(driveVal,
+					conf.getPropertyAsDouble("driveSpeed", 0.25));
 
 			drive.setLeftRightMotorOutputs(limitVal + 0.0038, limitVal);
 		}
@@ -238,11 +245,11 @@ public class DriveManagerImpl implements DriveManager {
 	 */
 	@Override
 	public void driveTurn(int degrees, boolean usePID) {
-		if(!usePID) {
+		if (!usePID) {
 			deadReckonTurn(degrees);
 			return;
 		}
-		
+
 		gyroPID.setDesiredValue(degrees);
 		gyro.reset(0);
 		// Reset the gyro PID to a reasonable state.
@@ -257,7 +264,8 @@ public class DriveManagerImpl implements DriveManager {
 			System.out.println("gyro.getAngle() = " + gyro.getAngle());
 			double driveVal = gyroPID.calcPID(-gyro.getAngle());
 			// TODO: Read this from the constants file as "gyroPIDMax"
-			double limitVal = SimLib.limitValue(driveVal, conf.getPropertyAsDouble("turnSpeed", 0.25));
+			double limitVal = SimLib.limitValue(driveVal,
+					conf.getPropertyAsDouble("turnSpeed", 0.25));
 			System.out.println("limitVal = " + limitVal);
 			drive.setLeftRightMotorOutputs(limitVal, -limitVal);
 		}
@@ -296,19 +304,20 @@ public class DriveManagerImpl implements DriveManager {
 	 */
 	public void runAutonomous() {
 		File f = new File(conf.getProperty("playDir"));
-		File[] files = f.listFiles(new FilenameFilter() { 
-		 public boolean accept(File dir, String filename)
-		      { return filename.endsWith(".auto"); }
-			} );
-		
+		File[] files = f.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String filename) {
+				return filename.endsWith(".auto");
+			}
+		});
+
 		List<File> listOfFiles = new ArrayList<File>();
 
-		for(File file : files) {
+		for (File file : files) {
 			listOfFiles.add(file);
 		}
-		
+
 		PlayList plays = new PlayList(listOfFiles, this, usePID);
-		
+
 		plays.play(conf.getProperty("playToUse"));
 	}
 
@@ -335,6 +344,18 @@ public class DriveManagerImpl implements DriveManager {
 		drive.drive(0, 0);
 	}
 
+	/**
+	 * Save waypoints for re-running in autonomous
+	 * 
+	 * @param startTime
+	 *            The start of the tele-op period
+	 * @param isFirst
+	 *            Whether it is the first time the method has been called
+	 * @param f
+	 *            The file to output to
+	 * @return The new start time (so the start time will be the first waypoint
+	 *         log time)
+	 */
 	private long doLogging(long startTime, boolean isFirst, File f) {
 		resetMeasurements();
 
@@ -397,35 +418,60 @@ public class DriveManagerImpl implements DriveManager {
 		gyro.reset(0);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ca.team2994.frc.autonomous.DriveManager#doRobotLogging()
+	 */
 	public boolean doRobotLogging() {
 		return saveWaypoints;
 	}
-	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ca.team2994.frc.autonomous.DriveManager#usePID()
+	 */
 	public boolean usePID() {
 		return usePID();
 	}
-	
+
+	/**
+	 * Turn without using PID
+	 * 
+	 * @param degrees
+	 *            The amount to turn
+	 */
 	private void deadReckonTurn(int degrees) {
 		gyro.reset();
-		
-    	while((gyro.getAngle() < degrees) && robot.isEnabled()) {
-    		drive.setLeftRightMotorOutputs(conf.getPropertyAsDouble("turnSpeed", 0.25), -conf.getPropertyAsDouble("turnSpeed", 0.25));
-    	}
-    	
-    	drive.drive(0, 0);
+
+		while ((gyro.getAngle() < degrees) && robot.isEnabled()) {
+			drive.setLeftRightMotorOutputs(
+					conf.getPropertyAsDouble("turnSpeed", 0.25),
+					-conf.getPropertyAsDouble("turnSpeed", 0.25));
+		}
+
+		drive.drive(0, 0);
 	}
-	
+
+	/**
+	 * Drive without using PID
+	 * 
+	 * @param distance
+	 *            The distance to drive
+	 */
 	private void deadReckonDrive(double distance) {
 		leftEncoder.reset();
 		rightEncoder.reset();
-		
+
 		double distanceTravelled = 0.0;
-		
-    	while((distanceTravelled < distance) && robot.isEnabled()) {
-    		distanceTravelled = (leftEncoder.getDistance() + rightEncoder.getDistance()) / 2;
-    		drive.drive(conf.getPropertyAsDouble("driveSpeed", 0.25), 0.0);
-    	}
-    	
-    	drive.drive(0, 0);
+
+		while ((distanceTravelled < distance) && robot.isEnabled()) {
+			distanceTravelled = (leftEncoder.getDistance() + rightEncoder
+					.getDistance()) / 2;
+			drive.drive(conf.getPropertyAsDouble("driveSpeed", 0.25), 0.0);
+		}
+
+		drive.drive(0, 0);
 	}
 }

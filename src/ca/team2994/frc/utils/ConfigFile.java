@@ -7,16 +7,42 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Class for handling config files
+ * 
+ * @author <a href="https://github.com/eandr127">eandr127</a>
+ * @author <a href="https://github.com/JackMc">JackMc</a>
+ *
+ */
 public class ConfigFile {
 
-	public static final File DEFAULT_CONFIGURATION_FILE = new File("/home/lvuser/drive.properties");
-	
+	/**
+	 * The default configuration file
+	 */
+	public static final File DEFAULT_CONFIGURATION_FILE = new File(
+			"/home/lvuser/drive.properties");
+
+	/**
+	 * The configuration object
+	 */
 	private final Properties properties = new Properties();
 
+	/**
+	 * Initialize the properties object
+	 * 
+	 * @param fileLoc
+	 *            The location of the properties file
+	 */
 	public ConfigFile(String fileLoc) {
 		this(new File(fileLoc));
 	}
 
+	/**
+	 * Initialize the properties object
+	 * 
+	 * @param file
+	 *            The properties file
+	 */
 	public ConfigFile(File file) {
 		try {
 			InputStream in = new FileInputStream(file);
@@ -30,10 +56,26 @@ public class ConfigFile {
 		}
 	}
 
+	/**
+	 * Gets a property value from the properties file
+	 * 
+	 * @param key
+	 *            The property name
+	 * @return The property value
+	 */
 	public String getProperty(String key) {
 		return properties.getProperty(key);
 	}
 
+	/**
+	 * Gets a property value from the properties file
+	 * 
+	 * @param key
+	 *            The property name
+	 * @param defaultValue
+	 *            The default value to return if the key does not exist
+	 * @return The property value or default value
+	 */
 	public String getProperty(String key, String defaultValue) {
 		return properties.getProperty(key, defaultValue);
 	}
@@ -220,7 +262,7 @@ public class ConfigFile {
 	public String[] getPropertyAsStringArray(String key) {
 		return this.getPropertyAsStringArray(key, new String[] {}, ",", true);
 	}
-	
+
 	public double[] getPropertyAsDoubleArray(String key) {
 		String[] sArray = this.getPropertyAsStringArray(key);
 		double[] dArray = new double[sArray.length];
@@ -228,10 +270,10 @@ public class ConfigFile {
 		for (int i = 0; i < sArray.length; i++) {
 			dArray[i] = Double.parseDouble(sArray[i]);
 		}
-		
+
 		return dArray;
 	}
-	
+
 	/**
 	 * Gets a property as a Double value. Anything not a double returns null.
 	 * 
@@ -256,8 +298,7 @@ public class ConfigFile {
 	}
 
 	/**
-	 * Gets a property as a Double value. Anything that is not a double is
-	 * null.
+	 * Gets a property as a Double value. Anything that is not a double is null.
 	 * 
 	 * @param key
 	 *            The key to get and convert to a Double.
@@ -280,5 +321,4 @@ public class ConfigFile {
 			return null;
 		}
 	}
-	
 }

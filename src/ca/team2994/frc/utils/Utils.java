@@ -25,11 +25,12 @@ import edu.wpi.first.wpilibj.RobotDrive;
  *
  */
 public class Utils {
-	
+
 	/**
 	 * A splitter to use when splitting strings by commas
 	 */
-	public static final Splitter SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
+	public static final Splitter SPLITTER = Splitter.on(',').trimResults()
+			.omitEmptyStrings();
 
 	/**
 	 * A filter to skip comments
@@ -38,33 +39,36 @@ public class Utils {
 		public boolean apply(String str) {
 			return !str.startsWith("//");
 		}
-	};	
-	
+	};
+
 	/**
 	 * The location of the calibration file
 	 */
 	public static final String CALIBRATION_OUTPUT_FILE_LOC = "/home/lvuser/calibration.txt";
-	
+
 	/**
-	 * The print stream to write to a file using {@link #writeLineToFile(String, File) writeLineToFile(java.lang.String line java.io.File file)}
+	 * The print stream to write to a file using
+	 * {@link #writeLineToFile(String, File) writeLineToFile(java.lang.String
+	 * line java.io.File file)}
 	 */
 	public static PrintStream stream = null;
-	
+
 	/**
 	 * Name of the Logger
 	 */
 	public static final String ROBOT_LOGGER_NAME = "RobotLogger";
-	
+
 	/**
 	 * The logger to be used
 	 */
-	public static final Logger ROBOT_LOGGER = Logger.getLogger(ROBOT_LOGGER_NAME);
-	
+	public static final Logger ROBOT_LOGGER = Logger
+			.getLogger(ROBOT_LOGGER_NAME);
+
 	/**
 	 * The path for the log
 	 */
 	public static final String ROBOT_LOG_FILENAME = "/home/lvuser/robot.log";
-	
+
 	/**
 	 * Configures the logger
 	 */
@@ -73,115 +77,135 @@ public class Utils {
 			final FileHandler fh = new FileHandler(ROBOT_LOG_FILENAME, true);
 			fh.setFormatter(new SimpleFormatter());
 			ROBOT_LOGGER.addHandler(fh);
-			
-			Runtime.getRuntime().addShutdownHook(new Thread()
-			{
-			    @Override
-			    public void run()
-			    {
-			    	Utils.ROBOT_LOGGER.info("Closing logger");
-			    	fh.flush();
-			    	fh.close();
-			    }
+
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				@Override
+				public void run() {
+					Utils.ROBOT_LOGGER.info("Closing logger");
+					fh.flush();
+					fh.close();
+				}
 			});
-			
+
 		} catch (SecurityException | IOException e) {
 			Utils.logException(Utils.ROBOT_LOGGER, e);
 		}
 	}
-	
+
 	/**
 	 * Writes a String to the file specified
-	 * @param line The String to write to the file
-	 * @param file The file to write to
+	 * 
+	 * @param line
+	 *            The String to write to the file
+	 * @param file
+	 *            The file to write to
 	 * @return Whether the operation was successful or not
 	 */
 	public static boolean writeLineToFile(String line, File file) {
-		
+
 		try {
 			stream = new PrintStream(new FileOutputStream(file, false));
 		} catch (FileNotFoundException e) {
 			Utils.logException(Utils.ROBOT_LOGGER, e);
-			return false;	
+			return false;
 		}
 
-		
 		stream.println(line);
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Writes a String to the file specified
-	 * @param line The String to write to the file
-	 * @param file The file to write to
+	 * 
+	 * @param line
+	 *            The String to write to the file
+	 * @param file
+	 *            The file to write to
 	 * @return Whether the operation was successful or not
 	 */
 	public static boolean writeStringToFile(String line, File file) {
-		
-		if(stream == null) {
+
+		if (stream == null) {
 			try {
 				stream = new PrintStream(new FileOutputStream(file, false));
 			} catch (FileNotFoundException e) {
 				Utils.logException(Utils.ROBOT_LOGGER, e);
-				return false;	
+				return false;
 			}
 		}
-		
+
 		stream.print(line);
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Drive until a distance is reached
-	 * @param speed The speed to drive at
-	 * @param turnMagnitude How much to turn
-	 * @param aDistance How far to drive on the first motor
-	 * @param bDistance How much to drive on the second motor
-	 * @param encoderA The first Encoder
-	 * @param encoderB the second Encoder
-	 * @param drive The RobotDrive to use
+	 * 
+	 * @param speed
+	 *            The speed to drive at
+	 * @param turnMagnitude
+	 *            How much to turn
+	 * @param aDistance
+	 *            How far to drive on the first motor
+	 * @param bDistance
+	 *            How much to drive on the second motor
+	 * @param encoderA
+	 *            The first Encoder
+	 * @param encoderB
+	 *            the second Encoder
+	 * @param drive
+	 *            The RobotDrive to use
 	 */
-	public static void driveDistance(double speed, double turnMagnitude, int aDistance, int bDistance, Encoder encoderA, Encoder encoderB, RobotDrive drive) {
+	public static void driveDistance(double speed, double turnMagnitude,
+			int aDistance, int bDistance, Encoder encoderA, Encoder encoderB,
+			RobotDrive drive) {
 		encoderA.reset();
 		encoderB.reset();
-		
-    	while((encoderA.getDistance() < aDistance || encoderB.getDistance() < bDistance) && !drive.isSafetyEnabled()) {
-    		drive.drive(speed * -1, turnMagnitude);
-    	}
-    	
-    	drive.drive(0, 0);
-	}	
-	
+
+		while ((encoderA.getDistance() < aDistance || encoderB.getDistance() < bDistance)
+				&& !drive.isSafetyEnabled()) {
+			drive.drive(speed * -1, turnMagnitude);
+		}
+
+		drive.drive(0, 0);
+	}
+
 	/**
 	 * Logs exception stack-traces
-	 * @param log The Java Logger to log with
-	 * @param e The exception to log
+	 * 
+	 * @param log
+	 *            The Java Logger to log with
+	 * @param e
+	 *            The exception to log
 	 */
 	public static void logException(Logger log, Exception e) {
 		StringWriter errors = new StringWriter();
 		e.printStackTrace(new PrintWriter(errors));
 		String exception = errors.toString();
-		
+
 		log.severe(exception);
 	}
 
 	/**
+	 * Add an array of values to a file
 	 * 
 	 * @param values
+	 *            The array of values to add to the file
+	 * @param f
+	 *            The file to write to
 	 */
 	public static void addLine(String[] values, File f) {
 		boolean isFirst = true;
-		for(String d : values) {
-			
-			if(!isFirst) {
+		for (String d : values) {
+
+			if (!isFirst) {
 				writeStringToFile(", ", f);
-			}
-			else {
+			} else {
 				isFirst = false;
 			}
-			
+
 			writeStringToFile("" + d, f);
 		}
 		writeStringToFile("\n", f);

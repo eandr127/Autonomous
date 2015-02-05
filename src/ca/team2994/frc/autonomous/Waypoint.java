@@ -8,10 +8,11 @@ package ca.team2994.frc.autonomous;
  * 
  */
 public interface Waypoint extends Runnable {
-		
+
 	/**
+	 * Get the time of the waypoint
 	 * 
-	 * @return
+	 * @return The time of the waypoint
 	 */
 	public long getTime();
 }

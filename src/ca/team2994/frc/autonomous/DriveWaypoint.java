@@ -8,31 +8,41 @@ package ca.team2994.frc.autonomous;
  * 
  */
 public class DriveWaypoint implements Waypoint {
-	
+
 	/**
-	 * 
+	 * The distance to drive
 	 */
 	private double distance;
-	
+
 	/**
-	 * 
+	 * The time of the waypoint
 	 */
 	private long time;
-	
+
 	/**
-	 * 
+	 * DriveManager to drive with
 	 */
 	private DriveManager manager;
-	
-	private boolean usePID;
-	
+
 	/**
+	 * Whether to use PID or to dead reckon
+	 */
+	private boolean usePID;
+
+	/**
+	 * A waypoint recorded in a file, of type drive
 	 * 
 	 * @param distance
+	 *            The distance to drive
 	 * @param time
+	 *            The time of the waypoint
 	 * @param manager
+	 *            DriveManager to drive with
+	 * @param usePID
+	 *            Whether to use PID or to dead reckon
 	 */
-	public DriveWaypoint(double distance, long time, DriveManager manager, boolean usePID) {
+	public DriveWaypoint(double distance, long time, DriveManager manager,
+			boolean usePID) {
 		this.distance = distance;
 		this.time = time;
 		this.manager = manager;

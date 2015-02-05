@@ -4,8 +4,8 @@ import edu.wpi.first.wpilibj.Joystick;
 
 public class EJoystick extends Joystick {
 	public static final int EJOYSTICK_NUM_BUTTONS = 11;
-	private ButtonEntry m_buttonTable[] = new ButtonEntry [EJOYSTICK_NUM_BUTTONS+1];
-	
+	private ButtonEntry m_buttonTable[] = new ButtonEntry[EJOYSTICK_NUM_BUTTONS + 1];
+
 	public EJoystick(int port) {
 		super(port);
 		initialize();
@@ -20,8 +20,8 @@ public class EJoystick extends Joystick {
 		if (buttonNumber < 1 || buttonNumber > EJOYSTICK_NUM_BUTTONS) {
 			return ButtonEntry.EVENT_ERR;
 		}
-		
-		//Disabled buttons are initialized to kEventErr
+
+		// Disabled buttons are initialized to kEventErr
 		return m_buttonTable[buttonNumber].getEvent();
 	}
 
@@ -29,18 +29,19 @@ public class EJoystick extends Joystick {
 		if (buttonNumber < 1 || buttonNumber > EJOYSTICK_NUM_BUTTONS) {
 			return ButtonEntry.STATE_ERR;
 		}
-		
-		//Disabled buttons are initialized to kStateErr
+
+		// Disabled buttons are initialized to kStateErr
 		return m_buttonTable[buttonNumber].getState();
 	}
 
 	public void update() {
 		int newState;
-		
-		for (int i=1; i<=EJOYSTICK_NUM_BUTTONS; i++) {
+
+		for (int i = 1; i <= EJOYSTICK_NUM_BUTTONS; i++) {
 			if (m_buttonTable[i].isEnabled() == true) {
-				newState = getRawButton(i) ? ButtonEntry.STATE_CLOSED : ButtonEntry.STATE_OPEN;
-				if (newState == m_buttonTable[i].getState())	{
+				newState = getRawButton(i) ? ButtonEntry.STATE_CLOSED
+						: ButtonEntry.STATE_OPEN;
+				if (newState == m_buttonTable[i].getState()) {
 					m_buttonTable[i].setEvent(ButtonEntry.EVENT_NONE);
 				} else {
 					if (newState == ButtonEntry.STATE_CLOSED) {
@@ -58,7 +59,7 @@ public class EJoystick extends Joystick {
 		if (buttonNumber < 1 || buttonNumber > EJOYSTICK_NUM_BUTTONS) {
 			return false;
 		}
-		
+
 		m_buttonTable[buttonNumber].setEnabled(true);
 		return true;
 	}
@@ -68,14 +69,15 @@ public class EJoystick extends Joystick {
 		m_buttonTable[0].setEnabled(false);
 		m_buttonTable[0].setEvent(ButtonEntry.EVENT_ERR);
 		m_buttonTable[0].setState(ButtonEntry.STATE_ERR);
-		
-		for (int i=1; i<=EJOYSTICK_NUM_BUTTONS; i++) {
+
+		for (int i = 1; i <= EJOYSTICK_NUM_BUTTONS; i++) {
 			m_buttonTable[i] = new ButtonEntry();
 			m_buttonTable[i].setEnabled(false);
 			m_buttonTable[i].setEvent(ButtonEntry.EVENT_ERR);
-			m_buttonTable[i].setState(getRawButton(i) ? ButtonEntry.STATE_CLOSED : ButtonEntry.STATE_OPEN);
+			m_buttonTable[i]
+					.setState(getRawButton(i) ? ButtonEntry.STATE_CLOSED
+							: ButtonEntry.STATE_OPEN);
 		}
 	}
-	
-	
+
 }
